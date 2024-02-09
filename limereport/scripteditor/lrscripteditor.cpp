@@ -1,10 +1,6 @@
 #include "lrscripteditor.h"
 #include "ui_lrscripteditor.h"
 
-#ifdef USE_QJSENGINE
-#include <QJSValueIterator>
-#endif
-
 #include "lrdatasourcemanager.h"
 #include "lrscriptenginemanager.h"
 #include "lrdatadesignintf.h"
@@ -200,47 +196,6 @@ void ReportStructureCompleater::addAdditionalDatawords(CompleterModel* model, Da
         varNode->setText(varName.remove("#"));
         model->invisibleRootItem()->appendRow(varNode);
     }
-
-#ifdef USE_QJSENGINE
-    ScriptEngineManager& se = LimeReport::ScriptEngineManager::instance();
-    QJSValue globalObject = se.scriptEngine()->globalObject();
-    QJSValueIterator it(globalObject);
-    while (it.hasNext()){
-        it.next();
-        if (it.value().isCallable() ){
-            CompleterItem* itemNode = new CompleterItem;
-            itemNode->setText(it.name()+"()");
-            model->invisibleRootItem()->appendRow(itemNode);
-        }
-        if (it.value().isQObject()){
-            if (it.value().toQObject()){
-                if (model->findItems(it.name()).isEmpty()){
-                    CompleterItem* objectNode = new CompleterItem;
-                    objectNode->setText(it.name());
-                    objectNode->setIcon(QIcon(":/report/images/object"));
-
-                    for (int i = 0; i< it.value().toQObject()->metaObject()->methodCount();++i){
-                        if (it.value().toQObject()->metaObject()->method(i).methodType() == QMetaMethod::Method){
-                            CompleterItem* methodNode = new CompleterItem;
-                            QMetaMethod m = it.value().toQObject()->metaObject()->method(i);
-                            QString methodSignature = m.name() + "(";
-                            bool isFirst = true;
-                            for (int j = 0; j <  m.parameterCount(); ++j){
-                                    methodSignature += (isFirst ? "" : ",") + m.parameterTypes()[j]+" "+m.parameterNames()[j];
-                                if (isFirst) isFirst = false;
-                            }
-                            methodSignature += ")";
-                            methodNode->setText(methodSignature);
-                            objectNode->appendRow(methodNode);
-                        }
-                    }
-                    model->invisibleRootItem()->appendRow(objectNode);
-                }
-            }
-        }
-    }
-#endif
-
 }
 
 void ReportStructureCompleater::updateCompleaterModel(ReportEnginePrivateInterface* report)
